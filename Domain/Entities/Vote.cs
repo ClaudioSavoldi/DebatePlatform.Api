@@ -10,7 +10,6 @@ namespace DebatePlatform.Api.Domain.Entities
         public Debate Debate { get; set; } = null!;
 
         public Guid UserId { get; set; }
-        public User User { get; set; } = null!;
 
         public VoteValue Value { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

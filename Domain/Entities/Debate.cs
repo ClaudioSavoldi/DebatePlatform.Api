@@ -12,7 +12,6 @@ namespace DebatePlatform.Api.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public Guid CreatedByUserId { get; set; }
-        public User CreatedByUser { get; set; } = null!;
 
         public ICollection<Vote> Votes { get; set; } = new List<Vote>();
         public ICollection<DebateStatusHistory> StatusHistory { get; set; } = new List<DebateStatusHistory>();

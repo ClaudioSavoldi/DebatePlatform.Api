@@ -1,8 +1,6 @@
 ﻿using DebatePlatform.Api.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -21,7 +19,7 @@ namespace DebatePlatform.Api.Controllers
         public AuthController(
            UserManager<ApplicationUser> userManager,
            SignInManager<ApplicationUser> signInManager,
-           IConfiguration)
+           IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -78,11 +76,13 @@ namespace DebatePlatform.Api.Controllers
             var audience = jwtSection["Audience"]!;
 
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? "")
-            };
+{
+    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+    new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? ""),
+    new Claim(ClaimTypes.Name, user.UserName ?? "")
+};
 
             var signingKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(key));
@@ -105,4 +105,4 @@ namespace DebatePlatform.Api.Controllers
     public record RegisterRequest(string Email, string Username, string Password);
     public record LoginRequest(string Email, string Password);
 }
-}
+

@@ -15,7 +15,6 @@ namespace DebatePlatform.Api.Domain.Entities
         public DateTime ChangedAt { get; set; } = DateTime.UtcNow;
 
         public Guid? ChangedByUserId { get; set; }
-        public User? ChangedByUser { get; set; }
 
 
         // Snapshot,rimangono anche se lo User viene eliminato

@@ -1,4 +1,7 @@
-﻿using DebatePlatform.Api.Controllers.Request;
+﻿using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using DebatePlatform.Api.Controllers.Request;
 using DebatePlatform.Api.Controllers.Response;
 using DebatePlatform.Api.Domain.Entities;
 using DebatePlatform.Api.Infrastructure.Persistence;
@@ -62,12 +65,18 @@ namespace DebatePlatform.Api.Controllers
 
         // POST: api/debates
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateDebateRequest request)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == request.CreatedByUserId);
-            if (!userExists)
-                return BadRequest("CreatedByUserId non valido: utente inesistente.");
+            // 1) Leggo l'ID dell'utente dal token JWT validato da ASP.NET Core
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userIdStr))
+                return Unauthorized("Token non valido: NameIdentifier mancante.");
 
+            if (!Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized("Token non valido: userId non è un Guid.");
+
+            // 2) Creo il dibattito usando l'utente loggato
             var debate = new Debate
             {
                 Id = Guid.NewGuid(),
@@ -75,7 +84,7 @@ namespace DebatePlatform.Api.Controllers
                 Body = request.Body.Trim(),
                 CreatedAt = DateTime.UtcNow,
                 Status = Domain.Enums.DebateStatus.Open,
-                CreatedByUserId = request.CreatedByUserId
+                CreatedByUserId = userId
             };
 
             _context.Debates.Add(debate);
@@ -93,5 +102,6 @@ namespace DebatePlatform.Api.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = debate.Id }, response);
         }
+
     }
 }

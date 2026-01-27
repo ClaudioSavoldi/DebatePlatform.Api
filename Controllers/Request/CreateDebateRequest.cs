@@ -11,9 +11,5 @@ namespace DebatePlatform.Api.Controllers.Request
         [Required]
         [MaxLength(5000)]
         public string Body { get; set; } = string.Empty;
-
-        //Poi con Identity/JWT dall'utente loggato
-        [Required]
-        public Guid CreatedByUserId { get; set; }
     }
 }

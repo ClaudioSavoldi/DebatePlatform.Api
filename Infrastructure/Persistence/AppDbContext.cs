@@ -8,7 +8,6 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
       : base(options){}
         
         
-        public DbSet<User> Users => Set<User>();
         public DbSet<Debate> Debates => Set<Debate>();
         public DbSet<Vote> Votes => Set<Vote>();
         public DbSet<DebateStatusHistory> DebateStatusHistories => Set<DebateStatusHistory>();
@@ -22,17 +21,7 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
                 .HasIndex(v => new { v.DebateId, v.UserId })
                 .IsUnique();
 
-            // Debate.CreatedBy (evitare cascade delete)
-            modelBuilder.Entity<Debate>()
-                .HasOne(d => d.CreatedByUser)
-                .WithMany(u => u.CreatedDebates)
-                .HasForeignKey(d => d.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<DebateStatusHistory>()
-               .HasOne(h => h.ChangedByUser)
-               .WithMany()
-               .HasForeignKey(h => h.ChangedByUserId)
-               .OnDelete(DeleteBehavior.SetNull);
+           
             
             //gestire parametri Snapshot
             modelBuilder.Entity<DebateStatusHistory>()
