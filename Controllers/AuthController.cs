@@ -38,9 +38,12 @@ namespace DebatePlatform.Api.Controllers
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
+           
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
+
+            await _userManager.AddToRoleAsync(user, "User");
 
             return Ok();
         }
@@ -62,12 +65,12 @@ namespace DebatePlatform.Api.Controllers
             if (!passwordCheck.Succeeded)
                 return Unauthorized("Credenziali non valide");
 
-            var token = GenerateJwtToken(user);
+            var token = await GenerateJwtTokenAsync(user);
 
             return Ok(new { token });
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtTokenAsync(ApplicationUser user)
         {
             var jwtSection = _configuration.GetSection("Jwt");
 
@@ -76,20 +79,23 @@ namespace DebatePlatform.Api.Controllers
             var audience = jwtSection["Audience"]!;
 
             var claims = new List<Claim>
-{
-    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-    new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? ""),
-    new Claim(ClaimTypes.Name, user.UserName ?? "")
-};
+    {    //id nel token
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+        new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? ""),
+        new Claim(ClaimTypes.Name, user.UserName ?? "")
+    };
 
-            var signingKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(key));
+            //RUOLI NEL TOKEN
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
-            var credentials = new SigningCredentials(
-                signingKey,
-                SecurityAlgorithms.HmacSha256);
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: issuer,

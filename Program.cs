@@ -98,6 +98,34 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+//Roles
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    string[] roles = ["User", "Moderator"];
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+        }
+    }
+
+    // DEV ONLY
+    var moderatorEmail = "savoldiclaudio02@gmail.com";
+    var moderatorUser = await userManager.FindByEmailAsync(moderatorEmail);
+
+    if (moderatorUser is not null)
+    {
+        if (!await userManager.IsInRoleAsync(moderatorUser, "Moderator"))
+        {
+            await userManager.AddToRoleAsync(moderatorUser, "Moderator");
+        }
+    }
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

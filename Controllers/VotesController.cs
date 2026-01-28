@@ -74,3 +74,4 @@ namespace DebatePlatform.Api.Controllers
         }
     }
 }
+
