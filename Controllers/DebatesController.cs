@@ -76,9 +76,7 @@ namespace DebatePlatform.Api.Controllers
                     CreatedAt = d.CreatedAt,
                     CreatedByUserId = d.CreatedByUserId,
 
-                    ProCount = d.Votes.Count(v => v.Value == VoteValue.Pro),
-                    ControCount = d.Votes.Count(v => v.Value == VoteValue.Contro),
-                    TotalVotes = d.Votes.Count(),
+                   
 
                     StatusHistory = d.StatusHistory
                         .OrderByDescending(h => h.ChangedAt)

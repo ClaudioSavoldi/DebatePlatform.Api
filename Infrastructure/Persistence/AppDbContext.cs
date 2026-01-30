@@ -11,18 +11,20 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
         public DbSet<Debate> Debates => Set<Debate>();
         public DbSet<Vote> Votes => Set<Vote>();
         public DbSet<DebateStatusHistory> DebateStatusHistories => Set<DebateStatusHistory>();
+        public DbSet<DebateMatch> DebateMatches => Set<DebateMatch>();
+        public DbSet<DebateQueueEntry> DebateQueueEntries => Set<DebateQueueEntry>();
+        public DbSet<MatchSubmission> MatchSubmissions => Set<MatchSubmission>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //Per ogni voto, considera insieme DebateId e UserIde assicurati che questa coppia sia unica nel database           
-            base.OnModelCreating(modelBuilder);
+            //Per ogni voto, considera insieme MatchId e UserIde assicurati che questa coppia sia unica nel database           
             modelBuilder.Entity<Vote>()
-                .HasIndex(v => new { v.DebateId, v.UserId })
-                .IsUnique();
+            .HasIndex(v => new { v.MatchId, v.UserId })
+            .IsUnique();
 
-           
-            
+
+
             //gestire parametri Snapshot
             modelBuilder.Entity<DebateStatusHistory>()
                 .Property(h => h.ChangedByUsernameSnapshot)
@@ -30,6 +32,22 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
             modelBuilder.Entity<DebateStatusHistory>()
                 .Property(h => h.ChangedByEmailSnapshot)
                 .HasMaxLength(254);
+
+            // Un utente può stare in coda UNA volta per topic (evita spam join)
+            modelBuilder.Entity<DebateQueueEntry>()
+                .HasIndex(q => new { q.DebateId, q.UserId })
+                .IsUnique();
+
+            // Ordinamento coda (utile per performance sulle query FIFO)
+            modelBuilder.Entity<DebateQueueEntry>()
+                .HasIndex(q => new { q.DebateId, q.Side, q.JoinedAt });
+
+            // Una submission per (match, user, phase)
+            modelBuilder.Entity<MatchSubmission>()
+                .HasIndex(s => new { s.MatchId, s.UserId, s.Phase })
+                .IsUnique();
+
+
 
         }
     }

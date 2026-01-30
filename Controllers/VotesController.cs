@@ -1,5 +1,6 @@
 ﻿using DebatePlatform.Api.Controllers.Request;
 using DebatePlatform.Api.Domain.Entities;
+using DebatePlatform.Api.Domain.Enums;
 using DebatePlatform.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ using System.Security.Claims;
 namespace DebatePlatform.Api.Controllers
 {
     [ApiController]
-    [Route("api/debates/{debateId:guid}/votes")]
+    [Route("api/matches/{matchId:guid}/votes")]
     public class VotesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -19,55 +20,59 @@ namespace DebatePlatform.Api.Controllers
             _context = context;
         }
 
-        // POST: api/debates/{debateId}/votes
+        // POST: api/matches/{matchId}/votes
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CastVote(Guid debateId, [FromBody] CastVoteRequest request)
+        public async Task<IActionResult> CastVote(Guid matchId, [FromBody] CastVoteRequest request)
         {
-            // userId dal token (ASP.NET standard)
+            // 1) userId dal JWT
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(userIdStr))
-                return Unauthorized("Token non valido: NameIdentifier mancante.");
+            if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized("Token non valido.");
 
-            if (!Guid.TryParse(userIdStr, out var userId))
-                return Unauthorized("Token non valido: userId non è un Guid.");
+            // 2) match esiste?
+            var match = await _context.DebateMatches
+                .AsNoTracking()
+                .Where(m => m.Id == matchId)
+                .Select(m => new { m.Id, m.Phase, m.ProUserId, m.ControUserId })
+                .FirstOrDefaultAsync();
 
-            // debate esiste?
-            var debateExists = await _context.Debates.AnyAsync(d => d.Id == debateId);
-            if (!debateExists)
-                return NotFound("Dibattito inesistente.");
+            if (match is null)
+                return NotFound("Match inesistente.");
 
-            // già votato?
-            var alreadyVoted = await _context.Votes.AnyAsync(v => v.DebateId == debateId && v.UserId == userId);
+            // 3) regola: si vota solo quando il match è in Voting
+            if (match.Phase != MatchPhase.Voting)
+                return BadRequest("Non puoi votare: il match non è in fase Voting.");
+
+            // 4) anti-cheat: i partecipanti NON possono votare
+            if (match.ProUserId == userId || match.ControUserId == userId)
+                return Forbid();
+
+            // 5) già votato?
+            var alreadyVoted = await _context.Votes
+                .AsNoTracking()
+                .AnyAsync(v => v.MatchId == matchId && v.UserId == userId);
+
             if (alreadyVoted)
-                return Conflict("Hai già votato per questo dibattito.");
+                return Conflict("Hai già votato per questo match.");
 
+            // 6) salva voto
             var vote = new Vote
             {
                 Id = Guid.NewGuid(),
-                DebateId = debateId,
+                MatchId = matchId,
                 UserId = userId,
                 Value = request.Value,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Votes.Add(vote);
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                // Protezione extra: vincolo unico (DebateId, UserId)
-                return Conflict("Hai già votato per questo dibattito.");
-            }
+            await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 vote.Id,
-                vote.DebateId,
-                vote.UserId,
+                vote.MatchId,
                 vote.Value,
                 vote.CreatedAt
             });

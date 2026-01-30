@@ -4,6 +4,7 @@ using DebatePlatform.Api.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DebatePlatform.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260130133835_AddMatchmakingCore")]
+    partial class AddMatchmakingCore
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,9 +59,6 @@ namespace DebatePlatform.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<Guid>("ControUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -73,9 +73,6 @@ namespace DebatePlatform.Api.Migrations
 
                     b.Property<Guid>("ProUserId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("VotingEndsAt")
-                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -164,20 +161,11 @@ namespace DebatePlatform.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsSubmitted")
-                        .HasColumnType("bit");
-
                     b.Property<Guid>("MatchId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Phase")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -199,10 +187,7 @@ namespace DebatePlatform.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("DebateId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MatchId")
+                    b.Property<Guid>("DebateId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("UserId")
@@ -213,9 +198,7 @@ namespace DebatePlatform.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DebateId");
-
-                    b.HasIndex("MatchId", "UserId")
+                    b.HasIndex("DebateId", "UserId")
                         .IsUnique();
 
                     b.ToTable("Votes");
@@ -267,17 +250,13 @@ namespace DebatePlatform.Api.Migrations
 
             modelBuilder.Entity("DebatePlatform.Api.Domain.Entities.Vote", b =>
                 {
-                    b.HasOne("DebatePlatform.Api.Domain.Entities.Debate", null)
+                    b.HasOne("DebatePlatform.Api.Domain.Entities.Debate", "Debate")
                         .WithMany("Votes")
-                        .HasForeignKey("DebateId");
-
-                    b.HasOne("DebatePlatform.Api.Domain.Entities.DebateMatch", "Match")
-                        .WithMany()
-                        .HasForeignKey("MatchId")
+                        .HasForeignKey("DebateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Match");
+                    b.Navigation("Debate");
                 });
 
             modelBuilder.Entity("DebatePlatform.Api.Domain.Entities.Debate", b =>
