@@ -18,7 +18,7 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //Per ogni voto, considera insieme MatchId e UserIde assicurati che questa coppia sia unica nel database           
+            //Per ogni voto, considera insieme MatchId e UserIde        
             modelBuilder.Entity<Vote>()
             .HasIndex(v => new { v.MatchId, v.UserId })
             .IsUnique();
@@ -33,12 +33,12 @@ namespace DebatePlatform.Api.Infrastructure.Persistence
                 .Property(h => h.ChangedByEmailSnapshot)
                 .HasMaxLength(254);
 
-            // Un utente può stare in coda UNA volta per topic (evita spam join)
+            // Un utente può stare in coda UNA volta per topic
             modelBuilder.Entity<DebateQueueEntry>()
                 .HasIndex(q => new { q.DebateId, q.UserId })
                 .IsUnique();
 
-            // Ordinamento coda (utile per performance sulle query FIFO)
+            // Ordinamento coda 
             modelBuilder.Entity<DebateQueueEntry>()
                 .HasIndex(q => new { q.DebateId, q.Side, q.JoinedAt });
 

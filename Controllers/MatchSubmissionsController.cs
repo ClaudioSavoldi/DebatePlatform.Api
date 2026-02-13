@@ -28,10 +28,8 @@ namespace DebatePlatform.Api.Controllers
 
         private static string NormalizeBody(string body) => body.Trim();
 
-        // ---------------------------
-        // OPENING: DRAFT
-        // PUT: api/matches/{matchId}/submissions/opening/draft
-        // ---------------------------
+        //OPENING: DRAFT         
+        // PUT: api/matches/{matchId}/submissions/opening/draft        
         [HttpPut("opening/draft")]
         [Authorize]
         public async Task<IActionResult> SaveOpeningDraft(Guid matchId, [FromBody] SubmitOpeningRequest request)
@@ -94,10 +92,9 @@ namespace DebatePlatform.Api.Controllers
             });
         }
 
-        // ---------------------------
+ 
         // OPENING: SUBMIT
         // POST: api/matches/{matchId}/submissions/opening/submit
-        // ---------------------------
         [HttpPost("opening/submit")]
         [Authorize]
         public async Task<IActionResult> SubmitOpening(Guid matchId)
@@ -160,10 +157,9 @@ namespace DebatePlatform.Api.Controllers
             });
         }
 
-        // ---------------------------
+        
         // REBUTTAL: DRAFT
         // PUT: api/matches/{matchId}/submissions/rebuttal/draft
-        // ---------------------------
         [HttpPut("rebuttal/draft")]
         [Authorize]
         public async Task<IActionResult> SaveRebuttalDraft(Guid matchId, [FromBody] SubmitRebuttalRequest request)
@@ -226,10 +222,8 @@ namespace DebatePlatform.Api.Controllers
             });
         }
 
-        // ---------------------------
         // REBUTTAL: SUBMIT
         // POST: api/matches/{matchId}/submissions/rebuttal/submit
-        // ---------------------------
         [HttpPost("rebuttal/submit")]
         [Authorize]
         public async Task<IActionResult> SubmitRebuttal(Guid matchId)
@@ -276,7 +270,7 @@ namespace DebatePlatform.Api.Controllers
             if (submittedCount == 2)
             {
                 match.Phase = MatchPhase.Voting;
-                match.VotingEndsAt = DateTime.UtcNow.AddHours(24);
+                match.VotingEndsAt = DateTime.UtcNow.AddMinutes(4);
                 match.ClosedAt = null;
                 await _context.SaveChangesAsync();
             }

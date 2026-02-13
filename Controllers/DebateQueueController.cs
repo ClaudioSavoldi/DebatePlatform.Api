@@ -76,7 +76,7 @@ namespace DebatePlatform.Api.Controllers
 
             _context.DebateQueueEntries.Add(entry);
 
-            // Salvo subito: così l’entry esiste “davvero” in DB prima di matchare
+            // Salvo subito: così l’entry esiste in DB prima di matchare
             await _context.SaveChangesAsync();
 
             // Cerco il primo avversario in attesa sul lato opposto (FIFO)
@@ -125,5 +125,35 @@ namespace DebatePlatform.Api.Controllers
                 Message = "Match trovato! Puoi iniziare la fase Opening."
             });
         }
+
+        // GET: api/debatequeue/mine
+        [HttpGet("/api/debatequeue/mine")]
+        [Authorize]
+        public async Task<IActionResult> GetMine()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized("Token non valido.");
+
+            var items = await _context.DebateQueueEntries
+                .AsNoTracking()
+                .Where(q => q.UserId == userId)
+                .OrderByDescending(q => q.JoinedAt)
+                .Select(q => new MyQueueItemResponse
+                {
+                    DebateId = q.DebateId,
+                    DebateTitle = q.Debate.Title,
+                    Side = q.Side,
+                    JoinedAt = q.JoinedAt
+                })
+                .ToListAsync();
+
+            return Ok(items);
+        }
+
+
+
+
+
     }
 }

@@ -47,7 +47,7 @@ namespace DebatePlatform.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            //Recupero solo lo status (query leggerissima)
+            //Recupero solo lo status 
             var status = await _context.Debates
                 .AsNoTracking()
                 .Where(d => d.Id == id)

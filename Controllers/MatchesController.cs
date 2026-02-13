@@ -22,8 +22,8 @@ namespace DebatePlatform.Api.Controllers
             _context = context;
             _userManager = userManager;
         }
-
-        // GET: api/matches/public
+// Mostra SOLO match votabili dal pubblico: Voting + non scaduti + topic Approved + testi consegnati
+        // GET: api/matches/public       
         [HttpGet("public")]
         public async Task<IActionResult> GetPublicVotable()
         {
@@ -68,17 +68,24 @@ namespace DebatePlatform.Api.Controllers
 
             return Ok(matches);
         }
-
-
+// Risultati pubblici:
+        // - match Closed
+        // - oppure match in Voting scaduti (VotingEndsAt <= now), anche se non sono ancora stati lazy-closed
         // GET: api/matches/results
         [HttpGet("results")]
         public async Task<IActionResult> GetPublicResults()
         {
+            var now = DateTime.UtcNow;
+
             var matches = await _context.DebateMatches
                 .AsNoTracking()
                 .Where(m =>
-                    m.Phase == MatchPhase.Closed &&
                     m.Debate.Status == DebateStatus.Approved &&
+
+                    (
+                        m.Phase == MatchPhase.Closed ||
+                        (m.Phase == MatchPhase.Voting && m.VotingEndsAt != null && m.VotingEndsAt <= now)
+                    ) &&
 
                     _context.MatchSubmissions.Count(s =>
                         s.MatchId == m.Id &&
@@ -108,8 +115,6 @@ namespace DebatePlatform.Api.Controllers
             return Ok(matches);
         }
 
-
-
         // GET: api/matches/{id}
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -133,7 +138,7 @@ namespace DebatePlatform.Api.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // 3) Ora costruisco il DTO (AsNoTracking ok, tanto ho già salvato)
+            // 3) Ora costruisco il DTO
             var match = await _context.DebateMatches
                 .AsNoTracking()
                 .Where(m => m.Id == id)
@@ -146,13 +151,12 @@ namespace DebatePlatform.Api.Controllers
                     ProUserId = m.ProUserId,
                     ControUserId = m.ControUserId,
 
-                    // hai detto che li hai aggiunti nel DTO
                     VotingEndsAt = m.VotingEndsAt,
                     ClosedAt = m.ClosedAt
                 })
                 .FirstOrDefaultAsync();
 
-            if (match is null) return NotFound(); // safety
+            if (match is null) return NotFound(); 
 
             // conteggi voti
             match.ProCount = await _context.Votes
@@ -165,7 +169,7 @@ namespace DebatePlatform.Api.Controllers
 
             match.TotalVotes = match.ProCount + match.ControCount;
 
-
+            // vincitore / pareggio
             if (match.TotalVotes == 0)
             {
                 match.WinnerUserId = null;
@@ -190,9 +194,6 @@ namespace DebatePlatform.Api.Controllers
                 var winnerUser = await _userManager.FindByIdAsync(winnerUserId.ToString());
                 match.WinnerUsername = winnerUser?.UserName;
             }
-
-
-
 
             // opening: visibili solo se entrambi SUBMITTED
             var opening = await _context.MatchSubmissions
